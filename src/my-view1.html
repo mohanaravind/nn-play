@@ -1,0 +1,341 @@
+<!--
+TODO: 
+1. Excel style input editor
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="my-view1">
+  <template>
+    <style include="shared-styles">
+       :host {
+        display: block;
+
+        padding: 10px;
+      }
+
+      .container {
+        display: flex;
+        justify-content: center;
+      }
+
+      .layer {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .neuron {
+        border-radius: 18px;
+      }
+
+      .inp {
+        background-color: #f4cccc;
+      }
+
+      .hidden {
+        background-color: #c9d9f8;
+      }
+
+      .out {
+        background-color: #d8e9d3;
+      }
+    </style>
+
+    <div class="card">
+      <h1>Hyperparameters</h1>
+      <div>
+
+        <div class="hyperparameters-row">
+          <labe>Layers</label>
+            <input id="layers" type="text" value="3x4x1" />
+        </div>
+        <div class="hyperparameters-row">
+          <labe>Learning Rate</label>
+            <input id="learningrate" type="number" value="0.01" />
+        </div>
+        <div class="hyperparameters-row">
+          <labe>Epochs</label>
+            <input id="epochs" type="number" value="1" />
+        </div>
+        <div class="hyperparameters-row">
+          <labe>Regularization</label>
+            <input id="regularization" type="number" value="0.1" />
+        </div>
+        <div class="hyperparameters-row">
+          <labe>Batchsize</label>
+            <input id="batchsize" type="number" value="120" />
+        </div>
+        <div class="hyperparameters-row">
+          <labe>Activation</label>
+            <select id="activation">
+            <option value="sigmoid">Sigmoid Function</option>
+          </select>
+        </div>
+
+
+        <button on-click="_update">Update</button>
+
+        <button on-click="_prepData">Prepare Data</button>
+
+        <button on-click="_train">Train</button>
+      </div>
+    </div>
+
+    <div class="card container">
+      <div class="card layer inp">
+        <template is="dom-repeat" items="[[network.inputs]]">
+          <div class="card neuron">
+
+          </div>
+        </template>
+      </div>
+
+      <template is="dom-repeat" items="[[network.hiddenLayers]]">
+        <div class="card layer hidden">
+          <template is="dom-repeat" items="[[item]]">
+            <div class="card neuron">
+
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <div class="card layer out">
+        <template is="dom-repeat" items="[[network.outputs]]">
+          <div class="card neuron">
+
+          </div>
+        </template>
+      </div>
+    </div>
+  </template>
+  <script src="../bower_components/numjs/dist/numjs.min.js"></script>
+  <script>
+    //Activations
+    class Activation {
+      static sigmoid(x) {
+        // 1/(1 + e^-x)        
+        let res = x.exp();
+        res = res.pow(-1);
+        res = res.add(1);
+        res = res.pow(-1);
+
+        return res;
+      }
+
+      static sigmoid_prime(x) {
+        // x = sigmoid(x); return x * (1-x)
+        const xSquared = x.pow(2);          
+        return x.subtract(xSquared);
+      }
+    }
+
+    //Samples
+    class SampleData {
+      //TODO: https://archive.ics.uci.edu/ml/datasets.html
+      static binarySample1() {
+        const inputs = [
+          [0, 0, 1],
+          [1, 1, 1],
+          [1, 0, 1],
+          [0, 1, 1]
+        ];
+
+        const labels = [
+          [0],
+          [1],
+          [1],
+          [0]
+        ];
+        
+        return {          
+          inputs,
+          labels
+        };
+      }
+
+      static sinCos() {        
+        //  y = sin(x) + cos(x)
+        const inputs = [];
+        const labels = [];
+        for (let idx = 1; idx < 5; idx++) {	
+          const x1 = Math.sin(idx);
+          const x2 = Math.cos(idx);
+
+          inputs.push([x1, x2]);
+          labels.push(x1 + x2 > 0 ? [1] : [0]);
+        }
+        
+        return {          
+          inputs,
+          labels
+        };
+      }
+    }
+
+    class MyView1 extends Polymer.Element {
+      constructor() {
+        super();
+      }
+
+      static get is() { return 'my-view1'; }
+
+      ready() {
+        super.ready();
+
+        this._update();
+      }
+
+      static get properties() {
+        return {
+          networkInfo: {
+            type: Object
+          }
+        };
+      }
+
+      //Update the network info with all hyperparameters and layers information
+      _update() {
+        const layers = this.$.layers.value.split('x').map(layer => Number(layer));
+
+        const networkInfo = {
+          layers: layers.slice(),
+          inputsCount: layers.shift(),
+          outputsCount: layers.pop(),
+          hiddenLayers: layers.map(count => new Array(count)),
+          learningrate: parseFloat(this.$.learningrate.value),
+          epochs: this.$.epochs.value,
+          activation: this.$.activation.options[this.$.activation.selectedIndex].value
+        };
+
+        //For the UI
+        this.network = {
+          inputs: Array(networkInfo.inputsCount),
+          outputs: Array(networkInfo.outputsCount),
+          hiddenLayers: networkInfo.hiddenLayers
+        };
+
+        //Expose the network information
+        this.networkInfo = networkInfo;
+      }
+
+      _prepData() {
+        //TODO: Use dropdown to dynamically allow selection of sample data
+
+        const data = SampleData.binarySample1();
+        
+        //Add it to the network info
+        this.networkInfo = {
+          ...this.networkInfo,
+          ...data
+        };
+      }
+
+
+
+      
+
+      /*
+        x
+        Before weight multiplication
+        
+        feedIn
+        After weight multiplication but before activation
+        
+        feedOut
+        After activation
+      */
+      _train() {
+        console.info('training');
+
+        //Get the network parameters
+        const net = this.networkInfo;
+
+        //Initialize the weights
+        const weights = [];        
+        const weights_delta = [];
+        for (let idx = 0; idx + 1 < net.layers.length; idx++) {
+          weights.push(nj.random([net.layers[idx], net.layers[idx + 1]]));
+          weights_delta.push(nj.zeros(weights[idx].shape));
+        }
+
+        for (let epoch = 0; epoch < net.epochs; epoch++) {
+          //Number of training samples
+          const m = net.inputs.length;
+
+          //Loop through all the inputs
+          net.inputs.forEach( (x, idx) => {            
+            ///////////////////////
+            //FORWARD PROPAGATION//
+            ///////////////////////
+
+            const layers = [];
+            x = nj.array(x);
+            weights.forEach((weight, idx) => {
+              const feedIn = nj.dot(x, weight);
+              const feedOut = Activation.sigmoid(feedIn);
+              const weight_delta = weights_delta[idx];
+
+              //Preserve
+              layers.push({x, weight, feedIn, feedOut, weight_delta });
+
+              //Set this as input for the next layer
+              x = feedOut;              
+            });
+
+            ////////////////////////
+            //BACKWARD PROPAGATION//
+            ////////////////////////
+            
+            //Get the labels
+            let y = nj.array(net.labels[idx]);
+            //Compute the error
+            let error = y.subtract(layers[layers.length - 1].feedOut);
+
+            //Go through the layers in reverse order
+            for (let idx = layers.length - 1; idx > -1; idx--) {        
+              const layer = layers[idx];
+
+              //Calculate the gradient
+              let gradient = Activation.sigmoid_prime(layer.feedOut).multiply(error);
+              //Backprop the error
+              error = nj.dot(layer.weight, gradient);
+              
+              //Compute the effect on the weight
+              // let weight_gradient = layer.x.reshape(layer.weight.shape).dot(gradient);
+              let A = nj.array([layer.x.tolist()]);
+              let B = nj.array([gradient.tolist()])
+              let weight_gradient = A.T.dot(B);
+
+              //Reshape the gradient
+              // weight_gradient = nj.ones(layer.weight_delta.shape)
+              //                     .dot(gradient)
+              //                     .reshape(layer.weight_delta.shape);
+              //Accumulate the weight gradient
+              layer.weight_delta = layer.weight_delta.add(weight_gradient);              
+            }
+
+            //.multiply(net.learningrate)
+            // layer.weight = layer.weight.add(weights_delta);
+            
+          });  
+        }
+
+
+
+        
+
+
+        
+        
+
+      }
+
+
+    }
+
+    window.customElements.define(MyView1.is, MyView1);
+  </script>
+</dom-module>
