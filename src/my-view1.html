@@ -165,13 +165,45 @@ TODO:
           const x2 = Math.cos(idx);
 
           inputs.push([x1, x2]);
-          labels.push(x1 + x2 > 0 ? [1] : [0]);
+          labels.push(x1 + x2 > 0 ? [1, 0] : [0, 1]);
         }
         
         return {          
           inputs,
           labels
         };
+      }
+    }
+
+    //Helper
+    class Log {
+      static success (message) {
+        console.log(`%c ${message}! `, 'background:#8BC34A; color:black;border-radius:2px');
+      }
+
+      static info (message) {
+        console.log(`%c ${message}! `, 'background:#CDDC39; color:black;border-radius:2px');
+      }
+
+    }
+
+    class Network {
+
+      constructor () {
+        
+      }
+
+      forward() {
+        weights.forEach((weight, idx) => {
+          const feedIn = nj.dot(x, weight);
+          const feedOut = Activation.sigmoid(feedIn);
+
+          //Preserve
+          layers.push({x, weight, feedIn, feedOut });
+
+          //Set this as input for the next layer
+          x = feedOut;              
+        });
       }
     }
 
@@ -223,14 +255,21 @@ TODO:
 
       _prepData() {
         //TODO: Use dropdown to dynamically allow selection of sample data
+        //TODO: Update the layers input & output count and do the _update based on sample data
+
+        Log.info('Data preparation started...');
+        
 
         const data = SampleData.binarySample1();
+        // const data =SampleData.sinCos();
         
         //Add it to the network info
         this.networkInfo = {
           ...this.networkInfo,
           ...data
         };
+
+        Log.success('Data preparation completed!');
       }
 
 
@@ -248,14 +287,14 @@ TODO:
         After activation
       */
       _train() {
-        console.info('training');
+        Log.info('Training started...');
 
         //Get the network parameters
         const net = this.networkInfo;
 
         //Initialize the weights
-        const weights = [];        
-        const weights_delta = [];
+        let weights = [];        
+        let weights_delta = [];
         for (let idx = 0; idx + 1 < net.layers.length; idx++) {
           weights.push(nj.random([net.layers[idx], net.layers[idx + 1]]));
           weights_delta.push(nj.zeros(weights[idx].shape));
@@ -276,10 +315,9 @@ TODO:
             weights.forEach((weight, idx) => {
               const feedIn = nj.dot(x, weight);
               const feedOut = Activation.sigmoid(feedIn);
-              const weight_delta = weights_delta[idx];
 
               //Preserve
-              layers.push({x, weight, feedIn, feedOut, weight_delta });
+              layers.push({x, weight, feedIn, feedOut });
 
               //Set this as input for the next layer
               x = feedOut;              
@@ -302,38 +340,31 @@ TODO:
               let gradient = Activation.sigmoid_prime(layer.feedOut).multiply(error);
               //Backprop the error
               error = nj.dot(layer.weight, gradient);
-              
-              //Compute the effect on the weight
-              // let weight_gradient = layer.x.reshape(layer.weight.shape).dot(gradient);
+
+              //Reshape and compute the effect on the weight              
               let A = nj.array([layer.x.tolist()]);
               let B = nj.array([gradient.tolist()])
               let weight_gradient = A.T.dot(B);
 
-              //Reshape the gradient
-              // weight_gradient = nj.ones(layer.weight_delta.shape)
-              //                     .dot(gradient)
-              //                     .reshape(layer.weight_delta.shape);
-              //Accumulate the weight gradient
-              layer.weight_delta = layer.weight_delta.add(weight_gradient);              
+              //Accumulate the weight gradient (Sum of gradients of all inputs)
+              weights_delta[idx] = weights_delta[idx].add(weight_gradient);
             }
+          });
 
-            //.multiply(net.learningrate)
-            // layer.weight = layer.weight.add(weights_delta);
-            
-          });  
+          //Make the correction to the weights
+          weights = weights.map((weight, idx) => {
+            //Get the change that needs to be done to the weight
+            const delta = weights_delta[idx].multiply(net.learningrate);
+            //Clear the weight delta from the accumulator so to be ready for next epoch
+            weights_delta[idx] = nj.zeros(weight.shape);
+
+            return weight.add(delta);
+          });
+
         }
 
-
-
-        
-
-
-        
-        
-
+        Log.success('Training completed!');
       }
-
-
     }
 
     window.customElements.define(MyView1.is, MyView1);
