@@ -57,3 +57,28 @@ generated using fragment bundling:
 
     polymer serve build/bundled
 
+### TODOs
+
+- [x] Backpropagation
+- [ ] Batch Sizing
+- [ ] Regularization
+- [ ] Stochastic gradient descent
+- [ ] Dynamic data sources
+- [ ] Display connecting lines over the graph
+- [ ] Interactive graph definition
+- [ ] Feature to disable non-linear activation on output layer
+- [ ] Web worker
+- [ ] Utilizing GPU
+- [ ] Export the computational graph
+- [ ] CNN
+- [ ] LSTM
+- [ ] Python binding
+- [ ] Tensorflow binding
+- [ ] Visualization
+
+
+
+### References
+https://iamtrask.github.io/2015/07/27/python-network-part2/
+http://stevenmiller888.github.io/mind-how-to-build-a-neural-network-part-2/
+
