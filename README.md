@@ -62,6 +62,8 @@ generated using fragment bundling:
 - [x] Backpropagation
 - [ ] Batch Sizing
 - [ ] Regularization
+- [ ] Updating samples
+- [ ] Supporting other activation functions
 - [ ] Stochastic gradient descent
 - [ ] Dynamic data sources
 - [ ] Display connecting lines over the graph
