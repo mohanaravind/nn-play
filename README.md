@@ -62,6 +62,8 @@ generated using fragment bundling:
 - [x] Backpropagation
 - [ ] Batch Sizing
 - [ ] Regularization
+- [ ] Dropout
+- [ ] Bias support
 - [ ] Updating samples
 - [ ] Supporting other activation functions
 - [ ] Stochastic gradient descent
@@ -70,7 +72,7 @@ generated using fragment bundling:
 - [ ] Interactive graph definition
 - [ ] Feature to disable non-linear activation on output layer
 - [ ] Web worker
-- [ ] Utilizing GPU
+- [ ] Utilizing GPU (GPU.js)
 - [ ] Export the computational graph
 - [ ] CNN
 - [ ] LSTM
@@ -81,6 +83,8 @@ generated using fragment bundling:
 
 
 ### References
-https://iamtrask.github.io/2015/07/27/python-network-part2/
-http://stevenmiller888.github.io/mind-how-to-build-a-neural-network-part-2/
-
+- https://iamtrask.github.io/2015/07/27/python-network-part2/
+- http://stevenmiller888.github.io/mind-how-to-build-a-neural-network-part-2/
+- https://github.com/Kulbear/deep-learning-nano-foundation/wiki/ReLU-and-Softmax-Activation-Functions
+- http://gpu.rocks/
+- https://github.com/bestiejs/benchmark.js
